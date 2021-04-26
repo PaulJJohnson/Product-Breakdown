@@ -25,10 +25,13 @@ Public Class Product
     Public Property Classification As String    'Specifies the product's classification. Example: Base Height or Stacker.
 
     Public Property UI_ButtonDescription As String 'Text that appears on the button that navigates the user to the appropriate quality sheet.
+
+    Public ProductAssemblyInformation As AssemblyInformation    'Holds information about how the product is assembled from child products if applicable. If not then only the ChildProduct1 variable is filled with the parent product number.
+
     <JsonIgnore> Private Shared FileName As String = Nothing
 
     <JsonConstructor>
-    Public Sub New(Optional PartNumber As String = Nothing, Optional Description As String = Nothing, Optional ProductionArea As String = Nothing, Optional ImageKey As Integer = 0, Optional Dimensions As List(Of Measurement) = Nothing, Optional Path As String = Nothing, Optional Measurements As Dictionary(Of String, Measurement) = Nothing, Optional MeasurementGroups As Dictionary(Of String, List(Of String)) = Nothing, Optional PrintPath As String = "", Optional Fixtured As Boolean = False, Optional FirstPiece As String = Nothing, Optional Audit As String = Nothing, Optional ButtonDescription As String = Nothing, Optional Family As String = Nothing, Optional SubFamily As String = Nothing, Optional Classification As String = Nothing)
+    Public Sub New(Optional PartNumber As String = Nothing, Optional Description As String = Nothing, Optional ProductionArea As String = Nothing, Optional ImageKey As Integer = 0, Optional Dimensions As List(Of Measurement) = Nothing, Optional Path As String = Nothing, Optional Measurements As Dictionary(Of String, Measurement) = Nothing, Optional MeasurementGroups As Dictionary(Of String, List(Of String)) = Nothing, Optional PrintPath As String = "", Optional Fixtured As Boolean = False, Optional FirstPiece As String = Nothing, Optional Audit As String = Nothing, Optional ButtonDescription As String = Nothing, Optional Family As String = Nothing, Optional SubFamily As String = Nothing, Optional Classification As String = Nothing, Optional assemblyInfo As AssemblyInformation = Nothing)
         Me.PartNumber = PartNumber
         Me.Description = Description
         Me.ProductionArea = ProductionArea
@@ -57,6 +60,7 @@ Public Class Product
         Me.Family = Family
         Me.SubFamily = SubFamily
         Me.Classification = Classification
+        Me.ProductAssemblyInformation = assemblyInfo
     End Sub
     'Functions for use with the Product Class
 
@@ -77,7 +81,10 @@ Public Class Product
     'Output // None.
     'Result // Adds a product To the disctionary and appends line to the product variable list file stored on the server.
     Public Sub SaveProduct()
-        ProductDirectory.Add(Me.PartNumber, Me)
+        Try
+            ProductDirectory.Add(Me.PartNumber, Me)
+        Catch ex As Exception
+        End Try
         Dim FileName As String = $"{My.Settings.ProductPath}\{Me.PartNumber}.json"
         Dim Json As String = JsonConvert.SerializeObject(Me, Formatting.Indented)
         File.WriteAllText(FileName, Json)
@@ -88,7 +95,10 @@ Public Class Product
     'Output // None.
     'Result // Removes a specific product from the product list.
     Public Shared Sub RemoveProductList(oldProduct As Product)
-        ProductDirectory.Remove(oldProduct.PartNumber)
+        Try
+            ProductDirectory.Remove(oldProduct.PartNumber)
+        Catch ex As Exception
+        End Try
         FileName = $"{oldProduct.Path}\{oldProduct.PartNumber}"
         File.Delete(FileName)
     End Sub
@@ -103,6 +113,39 @@ Public Class Product
             End Try
         Next
     End Sub
+
+    Structure AssemblyInformation
+        'Lists the parts required for completion of the production.
+        'If the product is a frame it will list all child products needed to complete 1 frame.
+        'If the product is anything that doesn't require assembly or more than one product to complete then it will list just the part number of the product itself.
+
+        'Tuple containing [Part Number,Qty Needed]
+
+        'ChildProduct1 will always be filled.
+        Public ChildProduct1 As Tuple(Of String, Integer)
+
+        Public ChildProduct2 As Tuple(Of String, Integer)
+
+        Public ChildProduct3 As Tuple(Of String, Integer)
+
+        Public ChildProduct4 As Tuple(Of String, Integer)
+
+        Public ChildProduct5 As Tuple(Of String, Integer)
+
+        Public ChildProduct6 As Tuple(Of String, Integer)
+
+        Public ChildProduct7 As Tuple(Of String, Integer)
+
+        Public ChildProduct8 As Tuple(Of String, Integer)
+
+        Public ChildProduct9 As Tuple(Of String, Integer)
+
+        Public ChildProduct10 As Tuple(Of String, Integer)
+
+        'Lists how many product numbers are present.
+        Public ChildProductsCount As Integer
+
+    End Structure
 End Class
 
 Public Class Measurement

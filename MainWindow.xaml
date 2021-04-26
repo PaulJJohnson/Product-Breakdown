@@ -5,21 +5,202 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Product_Breakdown"
         mc:Ignorable="d"
-        Title="Product Breakdown" Height="450" Width="550">
+        Title="Product Breakdown" Height="450" Width="650" MinWidth="650" MinHeight="450">
     <Grid Margin="0">
         <Grid.RowDefinitions>
-            <RowDefinition/>
+            <RowDefinition MaxHeight="38.1"/>
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
-        <Grid Margin="10,0">
+        <Grid Margin="5" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition Height="0*"/>
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
-                <ColumnDefinition/>
+                <ColumnDefinition MaxWidth="158"/>
+                <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="btn_FindPO" Content="Find PO" Margin="10,8"/>
+            <ListView x:Name="list_RecentPOs" Margin="5" SelectionMode="Single" FontSize="13">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="PO Numbers" Width="130" DisplayMemberBinding="{Binding }"/>
+                    </GridView>
+                </ListView.View>
+
+                <ListView.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="{x:Type GroupItem}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate>
+                                            <StackPanel Orientation="Vertical" Grid.Row="0">
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="Black" FontSize="14" VerticalAlignment="Bottom" />
+                                                <ItemsPresenter Grid.Row="1"/>
+                                            </StackPanel>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </ListView.GroupStyle>
+            </ListView>
+            <TabControl x:Name="tabC_MainTabControl" Grid.Column="1" Margin="5" Background="{x:Null}">
+                <TabItem x:Name="tab_POInfo" Header="PO Info">
+                    <Grid x:Name="grid_POInfo">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="3*"/>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="2*"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Label x:Name="lbl_PONumber" Content="PO #: None Selected" Margin="5" BorderThickness="0,1" FontSize="26" VerticalContentAlignment="Center" BorderBrush="Black"/>
+                        <Label x:Name="lbl_Family" Content="Family:" Margin="5" BorderThickness="1" FontSize="24" VerticalContentAlignment="Center" Grid.Row="1" BorderBrush="Black"/>
+                        <Label x:Name="lbl_ScheduleNumber" Content="Schedule #:" Margin="5" BorderThickness="0,1" FontSize="22" VerticalContentAlignment="Center" Grid.Row="2" BorderBrush="Black"/>
+                        <Label x:Name="lbl_DueDate" Content="Due Date:" Margin="5" BorderThickness="0,1" FontSize="24" VerticalContentAlignment="Center" Grid.Row="3" BorderBrush="Black"/>
+                        <Grid Margin="10" Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="btn_FindPO" Content="Find PO" Margin="10,8" Visibility="Hidden">
+                                <Button.Effect>
+                                    <DropShadowEffect ShadowDepth="0.5" Color="#FF0D829C" BlurRadius="6" Opacity="0.5"/>
+                                </Button.Effect>
+                                <Button.Background>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="#FFE6E6E6" Offset="0"/>
+                                        <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                            </Button>
+                            <Button x:Name="btn_PrintBreakdown" Content="Print" Margin="10,8" Grid.Column="1" Visibility="Hidden">
+                                <Button.Effect>
+                                    <DropShadowEffect ShadowDepth="0.5" Color="#FF0D829C" BlurRadius="6" Opacity="0.5"/>
+                                </Button.Effect>
+                                <Button.Background>
+                                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                        <GradientStop Color="#FFE6E6E6" Offset="0"/>
+                                        <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="tab_POBreakdown" Header="Buckets">
+                    <Grid x:Name="grid_Buckets">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                            <RowDefinition Height="10*"/>
+                        </Grid.RowDefinitions>
+                        <Label x:Name="lbl_BucketsHeader" Content="Bulk Packs :      | Singles :      | % Bulk Packs : " Margin="5,2" BorderThickness="0,1" FontSize="14" BorderBrush="Black" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="4"/>
+                        <Button x:Name="btn_PrintAll" Content="Print All" Margin="10,3" Grid.Row="1">
+                            <Button.Background>
+                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                    <GradientStop Color="#FFE6E6E6" Offset="0"/>
+                                    <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                        </Button>
+                        <Button x:Name="btn_PrintBulk" Content="Print Bulk" Margin="10,3" Grid.Row="1" Grid.Column="1">
+                            <Button.Background>
+                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                    <GradientStop Color="#FFE6E6E6" Offset="0"/>
+                                    <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                        </Button>
+                        <Button x:Name="btn_PrintSingles" Content="Print Singles" Margin="10,3" Grid.Row="1" Grid.Column="2">
+                            <Button.Background>
+                                <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                                    <GradientStop Color="#FFE6E6E6" Offset="0"/>
+                                    <GradientStop Color="#FFE5E5E5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                        </Button>
+                        <ListView x:Name="listView_Buckets" Grid.ColumnSpan="4" Margin="5" Grid.Row="2" Padding="0" FontSize="14" HorizontalContentAlignment="Center" IsTextSearchEnabled="False" Focusable="False" SelectionMode="Single">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Part #" Width="200" DisplayMemberBinding="{Binding PartNumber}"/>
+                                    <GridViewColumn Header="Qty Needed" Width="100" DisplayMemberBinding="{Binding QtyNeeded}"/>
+                                    <GridViewColumn Header="Qty Produced" Width="100" DisplayMemberBinding="{Binding QtyProduced}"/>
+                                </GridView>
+                            </ListView.View>
+
+                            <ListView.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="{x:Type GroupItem}">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <Grid.RowDefinitions>
+                                                                <RowDefinition/>
+                                                                <RowDefinition/>
+                                                            </Grid.RowDefinitions>
+                                                            <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="Black" FontSize="16" VerticalAlignment="Bottom" />
+                                                                <TextBlock Text="{Binding ItemCount}" FontSize="16" Foreground="Black" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Bottom" />
+                                                                <TextBlock Text=" products(s)" FontSize="14" Foreground="Silver" FontStyle="Italic" VerticalAlignment="Bottom" />
+                                                            </StackPanel>
+                                                            <ItemsPresenter Grid.Row="1"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </ListView.GroupStyle>
+                        </ListView>
+                    </Grid>
+                </TabItem>
+                <TabItem x:Name="tab_ComponentBreakdown" Header="Components">
+                    <Grid x:Name="grid_Components">
+                        <DocumentViewer x:Name="doc_ComponentBreakdown" Zoom="75" Document="{Binding ComponentBreakdownDocument}">
+                            <DocumentViewer.BindingGroup>
+                                <BindingGroup NotifyOnValidationError="False">
+                                </BindingGroup>
+                            </DocumentViewer.BindingGroup>
+                        </DocumentViewer>
+                    </Grid>
+                </TabItem>
+            </TabControl>
         </Grid>
+        <StackPanel Margin="0" Orientation="Horizontal">
+            <Label Content="Show" HorizontalAlignment="Left" Margin="10,6,0,6"/>
+            <ComboBox x:Name="cb_NumberOfDays" Width="50" Margin="0,6" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" FontSize="13">
+                <ComboBoxItem Content="2"/>
+                <ComboBoxItem Content="3"/>
+                <ComboBoxItem Content="4"/>
+                <ComboBoxItem Content="5"/>
+                <ComboBoxItem Content="6"/>
+                <ComboBoxItem Content="7"/>
+                <ComboBoxItem Content="8"/>
+                <ComboBoxItem Content="9"/>
+                <ComboBoxItem Content="10"/>
+            </ComboBox>
+            <Label x:Name="lbl_NumberOfDays" Content="Days" HorizontalAlignment="Left" Margin="0,6,10,6"/>
+        </StackPanel>
     </Grid>
 </Window>
