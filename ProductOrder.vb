@@ -10,11 +10,11 @@ Public Class ProductOrder
     Public Property ScheduleNumber As String
     Public Property PONumber As String
     Public Property OriginFile As String
+    Public Property DueDate As Date
 
     'Updated everytime a new line is read and the current product is registered.
     Public Property TotalNeeded As Integer
     Public Property TotalProduced As Integer
-
 
     'Collections:
     Public Buckets As Dictionary(Of String, Bucket)
@@ -206,23 +206,32 @@ Public Class ProductOrder
 
         If My.Computer.FileSystem.GetFiles(My.Settings.POSaveDirectory).Contains($"{My.Settings.POSaveDirectory}{PONumber}.JSON") Then
             Load(PONumber)
+
+            If Me.DueDate = Nothing Then
+                'Set DueDate:
+                Me.DueDate = CDate(Me.LineItems(1).NeedByDate)
+            End If
         Else
             LoadFile($"{My.Settings.iSupplier_Default}{PONumber}.txt")
             Me.OriginFile = $"{My.Settings.iSupplier_Default}{PONumber}"
+
+            'Set DueDate:
+            Me.DueDate = CDate(Me.LineItems(1).NeedByDate)
         End If
 
         'Determines if the buckets are bulkpacks or not.
         For Each bucketVar As Bucket In Buckets.Values
 
             'Checks if bucket has more than 1 part number and has 14 parts included in the bucket.
-            If bucketVar.Products.Count = 1 AndAlso ((bucketVar.BucketNeeded = 14 And Products.ElementAt(0).Value.Description.Contains("STRIDE WELDED FRAME")) Or (bucketVar.BucketNeeded = 16 And Products.ElementAt(0).Value.Description.Contains("TERR WELDED FRAME"))) Then
+            If bucketVar.Products.Count = 1 Then
+                'AndAlso ((bucketVar.BucketNeeded = 14 And Products.ElementAt(0).Value.Description.Contains("STRIDE WELDED FRAME")) Or (bucketVar.BucketNeeded = 16 And Products.ElementAt(0).Value.Description.Contains("TERR WELDED FRAME"))) Then
                 bucketVar.isBulkPack = True
 
                 'Add to the collection.
                 If Not BulkPacks.Contains(bucketVar.BucketNumber) Then
                     BulkPacks.Add(bucketVar.BucketNumber)
                 End If
-            Else
+            ElseIf bucketVar.Products.Count > 1 Then
                 bucketVar.isBulkPack = False
 
                 'Add to the collection.
@@ -238,7 +247,7 @@ Public Class ProductOrder
 
 
     <JsonConstructor>
-    Public Sub New(PONumber As String, Buckets As Dictionary(Of String, Bucket), Products As Dictionary(Of String, ProductEntry), LineItems As Dictionary(Of String, LineItem), Inputs As Dictionary(Of String, UserInput), File As String, TotalNeeded As Integer, TotalProduced As Integer, ScheduleNumber As String)
+    Public Sub New(PONumber As String, Buckets As Dictionary(Of String, Bucket), Products As Dictionary(Of String, ProductEntry), LineItems As Dictionary(Of String, LineItem), Inputs As Dictionary(Of String, UserInput), File As String, TotalNeeded As Integer, TotalProduced As Integer, ScheduleNumber As String, DueDate As Date)
 
         Me.PONumber = PONumber
         Me.ScheduleNumber = ScheduleNumber
@@ -249,6 +258,7 @@ Public Class ProductOrder
         Me.Products = Products
         Me.LineItems = LineItems
         Me.Inputs = Inputs
+        Me.DueDate = DueDate
 
     End Sub
 

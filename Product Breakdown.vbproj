@@ -13,7 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <IsWebBootstrapper>false</IsWebBootstrapper>
-    <PublishUrl>P:\IT\Applications\Product Breakdown\Test App\</PublishUrl>
+    <PublishUrl>P:\IT\Applications\Product Breakdown\Application Files\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Unc</InstallFrom>
     <UpdateEnabled>true</UpdateEnabled>
@@ -23,8 +23,8 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <InstallUrl>\\sjt-serv1-2013\Public\IT\Applications\Product Breakdown\Test App\</InstallUrl>
-    <ApplicationRevision>11</ApplicationRevision>
+    <InstallUrl>\\sjt-serv1-2013\Public\IT\Applications\Product Breakdown\Application Files\</InstallUrl>
+    <ApplicationRevision>14</ApplicationRevision>
     <ApplicationVersion>1.1.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>

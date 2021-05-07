@@ -8,7 +8,35 @@ Imports System.Windows.Xps
 
 Class MainWindow
 
+    'Public Class BucketDataTemplateSelector
+    '    Inherits DataTemplateSelector
+    '    Public Overrides Function SelectTemplate(ByVal item As Object, ByVal container As DependencyObject) As DataTemplate
+
+    '        Dim element As FrameworkElement
+    '        element = TryCast(container, FrameworkElement)
+
+    '        If element IsNot Nothing AndAlso item IsNot Nothing AndAlso TypeOf item Is Task Then
+
+    '            Dim taskitem As Task = TryCast(item, Task)
+
+    '            If taskitem.Priority = 1 Then
+    '                Return TryCast(element.FindResource("importantTaskTemplate"), DataTemplate)
+    '            Else
+    '                Return TryCast(element.FindResource("myTaskTemplate"), DataTemplate)
+    '            End If
+    '        End If
+
+    '        Return Nothing
+    '    End Function
+    'End Class
+
+
+
     Public Property ComponentBreakdownDocument As FixedDocumentSequence = Nothing
+
+    Public DisplayedPOItems As New List(Of ListViewItem)
+    Public HiddenPOItems As New List(Of ListViewItem)
+    Public DisplayedDates As New List(Of String)
 
     Private Sub OnLoaded() Handles Me.Loaded
         'Add handler to needed controls:
@@ -21,9 +49,11 @@ Class MainWindow
         'PO List Prep:
         'GeneratePOList()
         GeneratePODict()
-        UpdatePOList()
+        CreatePOList()
 
         createWatcher_iSupplier()
+
+        AddHandler cb_NumberOfDays.SelectionChanged, AddressOf cb_NumberOfDays_SelectionChanged
     End Sub
 
     'Watches for file changes in the specified directory. Ensures that information regarding the directory in question is up-to-date.
@@ -103,7 +133,7 @@ Class MainWindow
             Return True
 
         Catch ex As Exception
-            MessageBox.Show(ex.ToString, "",
+            MessageBox.Show($"Message: {ex.Message}{vbNewLine}Inner Exception: {ex.InnerException}", $"{ex.HResult}",
         MessageBoxButton.OK, MessageBoxImage.Information)
             Return False
         End Try
@@ -308,60 +338,95 @@ Class MainWindow
     End Structure
 
     Private Sub UpdatePOList()
-        'Clear list and then re-add all POs in need of re-adding.
+        'Need to fix the number of items in the list of POs and refresh the list view.
+        DisplayedDates.Clear()
 
-        'Clear the list view items.
-        'list_RecentPOs.Items.Clear()
+        Dim view As CollectionView = CollectionViewSource.GetDefaultView(list_RecentPOs.ItemsSource)
+        view.Refresh()
+    End Sub
+
+    Private Sub CreatePOList()
 
         'You should only have the last 15 days in the list.
 
-        Dim templist As New List(Of ListViewItem)
-
         For Each DayVar In DictOfPOs
             'Loop through each Day.
-            If DictOfPOs.Keys.ToList.IndexOf(DayVar.Key) + 1 <= My.Settings.int_DaysToDisplay Then
-                For Each POVar In DayVar.Value
+            For Each POVar In DayVar.Value
 
-                    'Add PO to the list view.
+                'Add PO to the list view.
 
-                    Dim tempString As String = POVar.Split("\")(POVar.Split("\").Count - 1).Replace(".txt", "")
+                Dim tempString As String = POVar.Split("\")(POVar.Split("\").Count - 1).Replace(".txt", "")
 
-                    'tempItem.PONumber = tempString
-                    'tempItem.ScheduleNumber = CDate(DayVar.Key.Insert(4, "-").Insert(2, "-"))
+                Dim tempItem As New ListViewItem
+                tempItem.Content = tempString
+                tempItem.Tag = DayVar.Key.Insert(4, "-").Insert(2, "-")
 
-                    Dim tempItem As New ListViewItem
-                    tempItem.Content = tempString
-                    tempItem.Tag = DayVar.Key.Insert(4, "-").Insert(2, "-")
+                Try
+                    Dim tempPO As New ProductOrder(tempString)
 
-                    Try
-                        Dim tempPO As New ProductOrder(tempString)
+                    If GetFamilyInfo(False, tempPO)(0) = "Terrace" Then
+                        tempItem.Background = New SolidColorBrush(Color.FromRgb(255, 122, 231))
+                    ElseIf GetFamilyInfo(False, tempPO)(0) = "Stride" Then
+                        tempItem.Background = New SolidColorBrush(Color.FromRgb(51, 190, 255))
+                    End If
 
-                        If GetFamilyInfo(False, tempPO)(0) = "Terrace" Then
-                            tempItem.Background = New SolidColorBrush(Color.FromRgb(255, 122, 231))
-                        ElseIf GetFamilyInfo(False, tempPO)(0) = "Stride" Then
-                            tempItem.Background = New SolidColorBrush(Color.FromRgb(51, 190, 255))
-                        End If
+                    'Add the PO to the hiiden items lsit either way.
+                    'List will always contain the same number of POs as the dictionary they were pulled from.
+                    HiddenPOItems.Add(tempItem)
 
-                        templist.Add(tempItem)
-                    Catch ex As Exception
-                        'Does nothing and continues to the next product order.
-                    End Try
+                    'If the day is within the allowed days then add it to the dispaly list.
+                    'If DictOfPOs.Keys.ToList.IndexOf(DayVar.Key) + 1 <= My.Settings.int_DaysToDisplay Then
+                    '    DisplayedPOItems.Add(tempItem)
+                    'End If
 
-                Next
-            End If
+                Catch ex As Exception
+                    'Does nothing and continues to the next product order.
+                End Try
+
+            Next
         Next
 
         'Adding the content to the list view.
-        list_RecentPOs.ItemsSource = templist
+        list_RecentPOs.ItemsSource = HiddenPOItems
 
         Dim view As CollectionView = CollectionViewSource.GetDefaultView(list_RecentPOs.ItemsSource)
         Dim groupDescription As PropertyGroupDescription = New PropertyGroupDescription("Tag")
         view.GroupDescriptions.Add(groupDescription)
+
+        'Add filter.
+        view.Filter = AddressOf DateFilter
     End Sub
+
+    Public Function DateFilter(item As Object) As Boolean
+        'Date that is checked against to determine whether the item is displayed or not.
+        'Dim cutoffDate As Date = Date.Today.Subtract(New TimeSpan(My.Settings.int_DaysToDisplay, 0, 0, 0))
+        'Dim checkDate As Date = CDate(item.tag.ToString.Replace("-", "/"))
+
+        If DisplayedDates.Count <= My.Settings.int_DaysToDisplay Then
+            If Not DisplayedDates.Contains(item.tag) AndAlso DisplayedDates.Count + 1 <= My.Settings.int_DaysToDisplay Then
+                DisplayedDates.Add(item.tag)
+
+                Return True
+
+            ElseIf DisplayedDates.Contains(item.tag) Then
+
+                Return True
+
+            Else
+
+                Return False
+
+            End If
+        Else
+
+            Return False
+
+        End If
+    End Function
 
     Private Sub UpdatePOInformation(Optional isNothing As Boolean = False)
         If isNothing = False Then
-            Me.lbl_DueDate.Content = $"Due Date: {CDate(CurrentPO.ScheduleNumber.Split("-")(2).Insert(4, "/").Insert(2, "/")).Subtract(New TimeSpan(5, 0, 0, 0)).ToShortDateString()}"
+            Me.lbl_DueDate.Content = $"Due Date: {CurrentPO.DueDate.ToShortDateString}"
             Me.lbl_Family.Content = $"Family: {GetFamilyInfo()(0)}"
             Me.lbl_PONumber.Content = $"PO #: {CurrentPO.PONumber}"
             Me.lbl_ScheduleNumber.Content = $"Schedule #: {CurrentPO.ScheduleNumber}"
@@ -390,7 +455,6 @@ Class MainWindow
             UpdatePOInformation()
             FillBucketsTab(CurrentPO)
             ShowComponentBreakdown(CurrentPO)
-            'PrintBuckets(CurrentPO)
         End If
     End Sub
 
@@ -436,7 +500,6 @@ Class MainWindow
         Dim view As CollectionView = CollectionViewSource.GetDefaultView(listView_Buckets.ItemsSource)
         Dim groupDescription As PropertyGroupDescription = New PropertyGroupDescription("BucketNumber")
         view.GroupDescriptions.Add(groupDescription)
-
         'Counts:
         Dim RogueCount As Integer = PO.RogueBuckets.Count
         Dim BulkCount As Integer = PO.BulkPacks.Count
@@ -555,7 +618,13 @@ Class MainWindow
         End If
     End Sub
 
-    Private Sub cb_NumberOfDays_SelectionChanged(sender As ComboBox, e As SelectionChangedEventArgs) Handles cb_NumberOfDays.SelectionChanged
+    Private Sub btn_PrintBulks_Click(sender As Object, e As RoutedEventArgs) Handles btn_PrintBulk.Click
+        If CurrentPO IsNot Nothing Then
+
+        End If
+    End Sub
+
+    Private Sub cb_NumberOfDays_SelectionChanged(sender As ComboBox, e As SelectionChangedEventArgs)
         'Combobox does not distinguish what POs are brought in, only how many general POs are brought in.
 
         'Set the count in settings.
@@ -565,5 +634,9 @@ Class MainWindow
 
         'Update the list of POs that are currently displayed.
         UpdatePOList()
+    End Sub
+
+    Private Sub listView_Buckets_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles listView_Buckets.SelectionChanged
+
     End Sub
 End Class

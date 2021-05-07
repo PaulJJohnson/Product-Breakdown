@@ -17,7 +17,7 @@
                 <RowDefinition Height="0*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
-                <ColumnDefinition MaxWidth="158"/>
+                <ColumnDefinition Width="170" MaxWidth="170"/>
                 <ColumnDefinition Width="3*"/>
             </Grid.ColumnDefinitions>
             <ListView x:Name="list_RecentPOs" Margin="5" SelectionMode="Single" FontSize="13">
@@ -109,8 +109,8 @@
                             <RowDefinition/>
                             <RowDefinition Height="10*"/>
                         </Grid.RowDefinitions>
-                        <Label x:Name="lbl_BucketsHeader" Content="Bulk Packs :      | Singles :      | % Bulk Packs : " Margin="5,2" BorderThickness="0,1" FontSize="14" BorderBrush="Black" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="4"/>
-                        <Button x:Name="btn_PrintAll" Content="Print All" Margin="10,3" Grid.Row="1">
+                        <Label x:Name="lbl_BucketsHeader" Content="Bulk Packs : 0 | Singles : 0 | % Bulk Packs : 0%" Margin="5,2" BorderThickness="0,1" FontSize="14" BorderBrush="Black" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="4"/>
+                        <Button x:Name="btn_PrintAll" Content="Print All" Margin="10,3" Grid.Row="1" IsEnabled="False">
                             <Button.Background>
                                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                                     <GradientStop Color="#FFE6E6E6" Offset="0"/>
@@ -118,7 +118,7 @@
                                 </LinearGradientBrush>
                             </Button.Background>
                         </Button>
-                        <Button x:Name="btn_PrintBulk" Content="Print Bulk" Margin="10,3" Grid.Row="1" Grid.Column="1">
+                        <Button x:Name="btn_PrintBulk" Content="Print Bulk" Margin="10,3" Grid.Row="1" Grid.Column="1" IsEnabled="False">
                             <Button.Background>
                                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                                     <GradientStop Color="#FFE6E6E6" Offset="0"/>
@@ -144,7 +144,7 @@
                             </ListView.View>
 
                             <ListView.GroupStyle>
-                                <GroupStyle>
+                                <GroupStyle x:Name="grp_SingleItem">
                                     <GroupStyle.ContainerStyle>
                                         <Style TargetType="{x:Type GroupItem}">
                                             <Setter Property="Template">
@@ -158,19 +158,22 @@
                                                                 <RowDefinition/>
                                                                 <RowDefinition/>
                                                             </Grid.RowDefinitions>
-                                                            <StackPanel Orientation="Horizontal" Grid.Row="0">
-                                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="Black" FontSize="16" VerticalAlignment="Bottom" />
-                                                                <TextBlock Text="{Binding ItemCount}" FontSize="16" Foreground="Black" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Bottom" />
-                                                                <TextBlock Text=" products(s)" FontSize="14" Foreground="Silver" FontStyle="Italic" VerticalAlignment="Bottom" />
-                                                            </StackPanel>
+                                                            <Border BorderThickness="0,0,0,1" BorderBrush="Black">
+                                                                <StackPanel Orientation="Horizontal" Grid.Row="0">
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="Black" FontSize="16" VerticalAlignment="Bottom" />
+                                                                    <TextBlock Text=" : " FontSize="16" Foreground="Black" VerticalAlignment="Bottom" />
+                                                                    <TextBlock Text="{Binding ItemCount}" FontSize="16" Foreground="Black" FontWeight="SemiBold" Margin="0,0,0,0" VerticalAlignment="Bottom" />
+                                                                    <TextBlock Text=" product(s)" FontSize="16" Foreground="Black" VerticalAlignment="Bottom" />
+                                                                </StackPanel>
+                                                            </Border>
                                                             <ItemsPresenter Grid.Row="1"/>
                                                         </Grid>
                                                     </ControlTemplate>
                                                 </Setter.Value>
-                                            </Setter>
-                                        </Style>
+                                            </Setter>                                            
+                                        </Style>                                        
                                     </GroupStyle.ContainerStyle>
-                                </GroupStyle>
+                                </GroupStyle>                                
                             </ListView.GroupStyle>
                         </ListView>
                     </Grid>
@@ -200,7 +203,8 @@
                 <ComboBoxItem Content="9"/>
                 <ComboBoxItem Content="10"/>
             </ComboBox>
-            <Label x:Name="lbl_NumberOfDays" Content="Days" HorizontalAlignment="Left" Margin="0,6,10,6"/>
+            <Label Content="Days" HorizontalAlignment="Left" Margin="0,6,5,6"/>
+            <GridSplitter HorizontalAlignment="Stretch" Width="1" Background="Black" Margin="0,5" VerticalContentAlignment="Center"/>
         </StackPanel>
     </Grid>
 </Window>
