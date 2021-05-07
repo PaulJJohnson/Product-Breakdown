@@ -5,6 +5,7 @@ Imports Product_Breakdown.Application
 Imports Product_Breakdown.MainWindow
 Imports Product_Breakdown.ProductOrder
 Imports System.Windows.Xps
+Imports System.Windows.Controls.Primitives
 
 Class MainWindow
 
@@ -637,6 +638,19 @@ Class MainWindow
     End Sub
 
     Private Sub listView_Buckets_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles listView_Buckets.SelectionChanged
+        'Groups are not recognized as entries.
+        'Entries are always the product numbers.
 
+        'Upon clicking a product, a popup is created and information about the product is displayed to the user.
+        Dim addedItem As BucketizedProductEntry = e.AddedItems(0)
+
+        Dim TotalNeeded As Integer = CurrentPO.Products(addedItem.PartNumber).QtyNeeded
+        Dim TotalProduced As Integer = CurrentPO.Products(addedItem.PartNumber).QtyProduced
+
+        Dim infoPopup As Popup = New Popup
+        Dim stkPnl As StackPanel = New StackPanel
+
+        stkPnl.Orientation = Orientation.Vertical
+        stkPnl.Children.Add(New Label())
     End Sub
 End Class
