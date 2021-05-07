@@ -10,11 +10,13 @@ Public Class ProductOrder
     Public Property ScheduleNumber As String
     Public Property PONumber As String
     Public Property OriginFile As String
+    Public Property ScheduleNumber_Date As Date
     Public Property DueDate As Date
 
     'Updated everytime a new line is read and the current product is registered.
     Public Property TotalNeeded As Integer
     Public Property TotalProduced As Integer
+
 
     'Collections:
     Public Buckets As Dictionary(Of String, Bucket)
@@ -33,6 +35,7 @@ Public Class ProductOrder
 
 
     'Structure Definition for a line item:
+    'Does not get updated when products are produced.
     Public Structure LineItem
 
         'Properties that make up a Line Item
@@ -54,7 +57,8 @@ Public Class ProductOrder
 
 
     'Structure Definition for a Bucket:
-    Public Structure Bucket
+    'Needs to be updated as products are produced.
+    Public Class Bucket
 
         Public BucketNumber As String
         Public Products As Dictionary(Of String, ProductEntry) 'Stores counts for the products within the bucket.
@@ -91,7 +95,7 @@ Public Class ProductOrder
 
             'Executes only if the product is registered.
             'Determines if the product is a registered product.
-            If ProductDirectory.ContainsKey(BucketB.Products.ElementAt(0).Key) Then
+            If My.Settings.AllowedProductRegistry.Contains(BucketB.Products.ElementAt(0).Key) Then
 
                 'Check if the product is already in the product dictionary.
                 If BucketA.Products.ContainsKey(BucketB.Products.ElementAt(0).Key) Then
@@ -130,7 +134,24 @@ Public Class ProductOrder
             Return tempInt
         End Function
 
-    End Structure
+        Public Sub New()
+            Me.BucketNeeded = 0
+            Me.BucketProduced = 0
+            Me.BucketNumber = Nothing
+            Me.LineItems = New List(Of String)
+            Me.Products = New Dictionary(Of String, ProductEntry)
+            Me.isBulkPack = False
+        End Sub
+
+        Public Sub New(BucketNumber As String)
+            Me.BucketNeeded = 0
+            Me.BucketProduced = 0
+            Me.BucketNumber = BucketNumber
+            Me.LineItems = New List(Of String)
+            Me.Products = New Dictionary(Of String, ProductEntry)
+            Me.isBulkPack = False
+        End Sub
+    End Class
 
 
     'Structure Definition for a UserInput:
@@ -140,7 +161,8 @@ Public Class ProductOrder
     End Structure
 
     'Structure definition for a product entry in the PO:
-    Public Structure ProductEntry
+    'Needs to be updated when a product is produced.
+    Public Class ProductEntry
         Public PartNumber As String
         Public Description As String
         Public QtyNeeded As Integer
@@ -180,7 +202,20 @@ Public Class ProductOrder
             Return returnVar
         End Function
 
-    End Structure
+        Public Sub New()
+            Me.Description = Nothing
+            Me.PartNumber = Nothing
+            Me.QtyNeeded = 0
+            Me.QtyProduced = 0
+        End Sub
+
+        Public Sub New(PartNumber As String)
+            Me.Description = Nothing
+            Me.PartNumber = PartNumber
+            Me.QtyNeeded = 0
+            Me.QtyProduced = 0
+        End Sub
+    End Class
 
     'Structure definition for a bucketized product entry in the PO:
     Public Structure BucketizedProductEntry
@@ -204,7 +239,7 @@ Public Class ProductOrder
         'LoadFile($"{My.Settings.iSupplier_Default}{PONumber}.txt")
         'Me.OriginFile = $"{My.Settings.iSupplier_Default}{PONumber}"
 
-        If My.Computer.FileSystem.GetFiles(My.Settings.POSaveDirectory).Contains($"{My.Settings.POSaveDirectory}{PONumber}.JSON") Then
+        If File.Exists($"{My.Settings.POSaveDirectory}{PONumber}.json") Then
             Load(PONumber)
 
             If Me.DueDate = Nothing Then
@@ -217,6 +252,8 @@ Public Class ProductOrder
 
             'Set DueDate:
             Me.DueDate = CDate(Me.LineItems(1).NeedByDate)
+
+            Me.Save()
         End If
 
         'Determines if the buckets are bulkpacks or not.
@@ -231,7 +268,7 @@ Public Class ProductOrder
                 If Not BulkPacks.Contains(bucketVar.BucketNumber) Then
                     BulkPacks.Add(bucketVar.BucketNumber)
                 End If
-            ElseIf bucketVar.Products.Count > 1 Then
+            Else
                 bucketVar.isBulkPack = False
 
                 'Add to the collection.
@@ -241,7 +278,9 @@ Public Class ProductOrder
             End If
         Next
 
-        Me.Save()
+        'Setting the schedule number date property.
+        Me.ScheduleNumber_Date = CDate(Me.ScheduleNumber.Split("-").Last.Insert(4, "-").Insert(2, "-"))
+
     End Sub
 
 
@@ -328,7 +367,7 @@ Public Class ProductOrder
                         'Only execute the following if the product is registered.
                         'We do not want to consider unregistered products when building the buckets and counting totals.
 
-                        If ProductDirectory.ContainsKey(curLineItem.PartNumber) Then
+                        If My.Settings.AllowedProductRegistry.Contains(curLineItem.PartNumber) Then
                             'Add the current line item to the dictionary with the key as the sequence number (SEQ)
                             Try
                                 LineItems.Add(curLineItem.Seq, curLineItem)
@@ -476,7 +515,7 @@ Public Class ProductOrder
                             'Only execute the following if the product is registered.
                             'We do not want to consider unregistered products when building the buckets and counting totals.
 
-                            If ProductDirectory.ContainsKey(curLineItem.PartNumber) Then
+                            If My.Settings.AllowedProductRegistry.Contains(curLineItem.PartNumber) Then
                                 'Add the current line item to the dictionary with the key as the sequence number (SEQ)
                                 Try
                                     LineItems.Add(curLineItem.Seq, curLineItem)
@@ -653,7 +692,7 @@ Public Class ProductOrder
     End Enum
 
     'Identifier is either a PO Number or a Schedule Number.
-    Private Function CheckSignature(Identifier As String) As Identifier
+    Private Shared Function CheckSignature(Identifier As String) As Identifier
         'PO Numbers will only contain 1 "-".
         'Schedule Numbers will contain at least 2 "-".
 
@@ -688,7 +727,7 @@ Public Class ProductOrder
             End If
 
             'Check if the ship-to identifier is made up only by letters.
-            If isNumeric(Identifier.Split("-")(0)) = True Then
+            If IsNumeric(Identifier.Split("-")(0)) = True Then
                 isScheduleNumber = False
             End If
 
@@ -705,12 +744,56 @@ Public Class ProductOrder
         Return Nothing
     End Function
 
-    'Identifier is either a PO Number or a Schedule Number.
-    Public Overloads Function FindPO(Identifier As String) As ProductOrder
+    Public Shared Function FindPO(PONumber As String) As ProductOrder
         'Loop through the files in the specified directory in order to find the identified string.
 
-        'Need to determine whether the identifier is a PO Number or a Schedule Number.
+        If CheckSignature(PONumber) = ProductOrder.Identifier.PONumber Then
+            'Declare return value.
+            Dim returnPO As ProductOrder = Nothing
 
+            'Check the PO save location for the PO JSON file.
+            If File.Exists($"{My.Settings.POSaveDirectory}{PONumber}.JSON") Then
+
+                returnPO.Load(PONumber)
+
+                Return returnPO
+            End If
+
+            'Check the files in the iSupplier folder.
+            If File.Exists($"{My.Settings.iSupplier_Default}{PONumber}.txt") Then
+
+                returnPO = New ProductOrder(PONumber)
+
+                Return returnPO
+            End If
+
+        End If
+
+        'No PO was found. Return nothing.
+        Return Nothing
+    End Function
+
+    'Schedule Number is only the date at the end of the schedule number.
+    Public Shared Function FindPOs(ScheduleNumber As String) As List(Of ProductOrder)
+        'Loop through the files in the specified directory in order to find the identified string.
+
+        If CheckSignature(ScheduleNumber) = ProductOrder.Identifier.ScheduleNumber Then
+            'Declare return value.
+            Dim returnList As New List(Of ProductOrder)
+
+            Dim searchString As String = $"-{ScheduleNumber.Split("-").Last()}"
+            Dim files As List(Of String) = My.Computer.FileSystem.FindInFiles(My.Settings.iSupplier_Default, searchString, True, FileIO.SearchOption.SearchTopLevelOnly).ToList()
+
+            For Each fileVar In files
+                'Add the PO to the return list after having created a new PO object.
+                returnList.Add(New ProductOrder(fileVar.Split("\").Last().Replace(".txt", "")))
+            Next
+
+            Return returnList
+        End If
+
+        'No PO's were found. Return nothing.
+        Return Nothing
     End Function
 
     Public Function BucketizeProducts() As List(Of BucketizedProductEntry)
@@ -726,10 +809,54 @@ Public Class ProductOrder
                 returnList.Add(productVar.Bucketize(bucket.BucketNumber))
 
             Next
-
         Next
 
         'Return the variable.
         Return returnList
     End Function
+
+    Public Sub Produce(PartNumber As String, QtyProduced As Double)
+
+        'Check that the part number is valid.
+        If Me.Products.ContainsKey(PartNumber) Then
+            'Need to update that count in all locations that the product exists in.
+
+            'ProductEntry:
+
+            Me.Products(PartNumber).QtyProduced += QtyProduced
+
+            'Buckets:
+
+            Dim QtyExtra As Double = 0
+            Dim index As Integer = 0
+            While index < Buckets.Count
+
+                Dim bucketVar As Bucket = Buckets.ElementAt(index).Value
+
+                'Assume the buckets are in order from first to last.
+                If bucketVar.Products.ContainsKey(PartNumber) Then
+
+                    'Check if the QtyProduced will exceed the needed quantity.
+                    If bucketVar.Products(PartNumber).QtyProduced + QtyProduced >= bucketVar.Products(PartNumber).QtyNeeded Then
+                        'Fill the bucket and then reset the QtyExtra variable to reflect the proper variable.
+
+                        QtyExtra = QtyExtra - bucketVar.Products(PartNumber).QtyNeeded - bucketVar.Products(PartNumber).QtyProduced
+                        bucketVar.Products(PartNumber).QtyProduced = bucketVar.Products(PartNumber).QtyNeeded
+                        bucketVar.BucketProduced = bucketVar.BucketNeeded
+                    Else
+                        'Just add the total to the bucket.
+                        bucketVar.Products(PartNumber).QtyProduced += QtyProduced
+                        bucketVar.BucketProduced += QtyProduced
+                    End If
+                End If
+
+                index += 1
+            End While
+
+            'PO Counts:
+            Me.TotalProduced += QtyProduced
+        End If
+
+        Me.Save()
+    End Sub
 End Class

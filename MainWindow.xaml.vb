@@ -597,7 +597,7 @@ Class MainWindow
             Next
 
         Catch ex As Exception
-            MessageBox.Show(ex.ToString, "",
+            MessageBox.Show(ex.ToString, "PrintRogueBuckets",
         MessageBoxButton.OK, MessageBoxImage.Information)
         End Try
     End Sub
