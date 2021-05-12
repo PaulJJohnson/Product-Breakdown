@@ -75,10 +75,11 @@ Public Class ProductOrder
             '   -> Only made up of one line.
 
             'Return variable declaration:
-            Dim returnBucket As Bucket
-            returnBucket.BucketNumber = BucketA.BucketNumber
-            returnBucket.Products = BucketA.Products
-            returnBucket.LineItems = BucketA.LineItems
+            Dim returnBucket As New Bucket With {
+                .BucketNumber = BucketA.BucketNumber,
+                .Products = BucketA.Products,
+                .LineItems = BucketA.LineItems
+            }
 
             'Verify bucket numbers are the same.
             If BucketB.BucketNumber <> BucketA.BucketNumber Or BucketA.LineItems.Contains(BucketB.LineItems.ElementAt(0)) Then
@@ -178,13 +179,13 @@ Public Class ProductOrder
             End If
 
             'Setup return variable.
-            Dim returnProduct As ProductEntry
-            returnProduct.PartNumber = ProdA.PartNumber
-            returnProduct.Description = ProdA.Description
-
             'Calculations:
-            returnProduct.QtyNeeded = ProdA.QtyNeeded + ProdB.QtyNeeded
-            returnProduct.QtyProduced = ProdA.QtyProduced + ProdB.QtyProduced
+            Dim returnProduct As New ProductEntry With {
+                .PartNumber = ProdA.PartNumber,
+                .Description = ProdA.Description,
+                .QtyNeeded = ProdA.QtyNeeded + ProdB.QtyNeeded,
+                .QtyProduced = ProdA.QtyProduced + ProdB.QtyProduced
+            }
 
             Return returnProduct
         End Operator
@@ -378,11 +379,12 @@ Public Class ProductOrder
 
 
                             'Create a product entry for the current line item.
-                            Dim curProduct As ProductEntry
-                            curProduct.PartNumber = curLineItem.PartNumber
-                            curProduct.Description = curLineItem.PartDescription
-                            curProduct.QtyNeeded = curLineItem.PartQty
-                            curProduct.QtyProduced = 0
+                            Dim curProduct As New ProductEntry With {
+                                .PartNumber = curLineItem.PartNumber,
+                                .Description = curLineItem.PartDescription,
+                                .QtyNeeded = curLineItem.PartQty,
+                                .QtyProduced = 0
+                            }
 
                             'Need to add the curProduct to the product entries dictionary.
                             If Products.ContainsKey(curProduct.PartNumber) Then
@@ -402,21 +404,22 @@ Public Class ProductOrder
                                 Me.TotalProduced += curProduct.QtyProduced
                             End If
 
-                            'Need to create a new bucket variable out of the current line item.
-                            Dim curBucket As Bucket
+
 
                             'Me.Buckets
                             'This bucket is only made up of a single item.
                             Dim curBucketNumber As String = curLineItem.BucketNumber.Split("-")(3)
 
-                            curBucket.BucketNumber = curBucketNumber
-                            curBucket.LineItems = New List(Of String)
-                            curBucket.LineItems.Add(curLineItem.Seq)
-                            curBucket.Products = New Dictionary(Of String, ProductEntry)
+                            'Need to create a new bucket variable out of the current line item.
+                            Dim curBucket As New Bucket With {
+                                .BucketNumber = curBucketNumber,
+                                .LineItems = New List(Of String) From {curLineItem.Seq},
+                                .BucketNeeded = curProduct.QtyNeeded,
+                                .BucketProduced = 0,
+                                .isBulkPack = False,
+                                .Products = New Dictionary(Of String, ProductEntry)
+                            }
                             curBucket.Products.Add(curProduct.PartNumber, curProduct)
-                            curBucket.BucketNeeded = curProduct.QtyNeeded
-                            curBucket.BucketProduced = 0
-                            curBucket.isBulkPack = False
 
                             'Check if the bucket number is already present in the dictionary.
                             If Buckets.ContainsKey(curBucketNumber) Then
@@ -727,7 +730,7 @@ Public Class ProductOrder
             End If
 
             'Check if the ship-to identifier is made up only by letters.
-            If IsNumeric(Identifier.Split("-")(0)) = True Then
+            If isNumeric(Identifier.Split("-")(0)) = True Then
                 isScheduleNumber = False
             End If
 

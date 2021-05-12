@@ -31,7 +31,7 @@ Class MainWindow
     '    End Function
     'End Class
 
-
+    Dim infoPopup As Popup
 
     Public Property ComponentBreakdownDocument As FixedDocumentSequence = Nothing
 
@@ -48,13 +48,14 @@ Class MainWindow
         cb_NumberOfDays.SelectedIndex = My.Settings.int_DaysToDisplay - 2
 
         'PO List Prep:
-        'GeneratePOList()
         GeneratePODict()
         CreatePOList()
 
         createWatcher_iSupplier()
 
         AddHandler cb_NumberOfDays.SelectionChanged, AddressOf cb_NumberOfDays_SelectionChanged
+
+        cb_ShowInsight.IsChecked = My.Settings.InsightAllowed
     End Sub
 
     'Watches for file changes in the specified directory. Ensures that information regarding the directory in question is up-to-date.
@@ -642,15 +643,102 @@ Class MainWindow
         'Entries are always the product numbers.
 
         'Upon clicking a product, a popup is created and information about the product is displayed to the user.
-        Dim addedItem As BucketizedProductEntry = e.AddedItems(0)
+        'Dim addedItem As BucketizedProductEntry = e.AddedItems(0)
 
-        Dim TotalNeeded As Integer = CurrentPO.Products(addedItem.PartNumber).QtyNeeded
-        Dim TotalProduced As Integer = CurrentPO.Products(addedItem.PartNumber).QtyProduced
+        'InsightPopup(addedItem, e)
+    End Sub
 
-        Dim infoPopup As Popup = New Popup
+    Private Sub InsightPopup(addedItem As Object, e As MouseEventArgs)
+
+        If My.Settings.InsightAllowed = False Then
+            Exit Sub
+        End If
+
+        If infoPopup IsNot Nothing Then
+            infoPopup.IsOpen = False
+        End If
+
+        Dim TotalNeeded As Integer = CurrentPO.Products(addedItem.content.PartNumber).QtyNeeded
+        Dim TotalProduced As Integer = CurrentPO.Products(addedItem.content.PartNumber).QtyProduced
+
+        infoPopup = New Popup
+        Dim brdr As Border = New Border
+        Dim brdr1 As Border = New Border
         Dim stkPnl As StackPanel = New StackPanel
+        Dim lbl1 As New Label
+        Dim lbl2 As New Label
+        Dim prgrs As ProgressBar = New ProgressBar
+
+        Dim displayElement As New ListViewItem
+        displayElement = e.Source
+
+        Dim headerContent As New Label
+        'Dim headerDescription As Label = New Label
+
+        'Header Label:
+        headerContent.FontSize = 18
+        headerContent.Content = ProductDirectory(addedItem.content.PartNumber).UI_ButtonDescription
+        headerContent.BorderThickness = New Thickness(0, 0, 0, 1)
+        headerContent.BorderBrush = New SolidColorBrush(Colors.Black)
+        headerContent.Background = New SolidColorBrush(Colors.Transparent)
+        headerContent.HorizontalContentAlignment = HorizontalAlignment.Center
+        'Label 1:
+        lbl1.Content = $"Produced: {TotalProduced}"
+        lbl1.Width = 150
+        lbl1.Height = 25
+        lbl1.Background = New SolidColorBrush(Colors.Transparent)
+        'Label 2:
+        lbl2.Content = $"Needed: {TotalNeeded}"
+        lbl2.Width = 150
+        lbl2.Height = 25
+        lbl2.Background = New SolidColorBrush(Colors.Transparent)
+        'Progress Bar:
+        prgrs.Value = TotalProduced / TotalNeeded * 100
+        prgrs.Width = 200
+        prgrs.Height = 35
+        prgrs.Margin = New Thickness(5, 5, 5, 5)
 
         stkPnl.Orientation = Orientation.Vertical
-        stkPnl.Children.Add(New Label())
+        stkPnl.Children.Add(headerContent)
+        stkPnl.Children.Add(lbl1)
+        stkPnl.Children.Add(lbl2)
+        stkPnl.Children.Add(prgrs)
+        stkPnl.Background = New SolidColorBrush(Colors.White)
+
+        If TotalNeeded <= TotalProduced Then
+            brdr.BorderBrush = New SolidColorBrush(Colors.Lime)
+        ElseIf TotalProduced > 0 And TotalNeeded > TotalProduced Then
+            brdr.BorderBrush = New SolidColorBrush(Colors.Orange)
+        Else
+            brdr.BorderBrush = New SolidColorBrush(Colors.Red)
+        End If
+        brdr.BorderThickness = New Thickness(0, 5, 0, 0)
+        brdr.Background = New SolidColorBrush(Colors.White)
+        brdr.Child = stkPnl
+
+        brdr1.BorderThickness = New Thickness(1, 0, 1, 1)
+        brdr1.Child = brdr
+        brdr1.Background = New SolidColorBrush(Colors.White)
+
+        infoPopup.PlacementTarget = displayElement
+        infoPopup.Placement = PlacementMode.Bottom
+        infoPopup.Child = brdr1
+        infoPopup.IsOpen = True
+    End Sub
+
+    Private Sub Hide_InsightPopup()
+        If infoPopup IsNot Nothing Then
+            infoPopup.IsOpen = False
+        End If
+    End Sub
+
+    Private Sub cb_ShowInsight_Checked(sender As CheckBox, e As RoutedEventArgs) Handles cb_ShowInsight.Checked, cb_ShowInsight.Unchecked
+        If sender.IsChecked = True Then
+            My.Settings.InsightAllowed = True
+        ElseIf sender.IsChecked = False Then
+            My.Settings.InsightAllowed = False
+        End If
+
+        My.Settings.Save()
     End Sub
 End Class

@@ -202,6 +202,18 @@ Partial Friend NotInheritable Class MySettings
             Me("POSaveDirectory") = value
         End Set
     End Property
+    
+    <Global.System.Configuration.UserScopedSettingAttribute(),  _
+     Global.System.Diagnostics.DebuggerNonUserCodeAttribute(),  _
+     Global.System.Configuration.DefaultSettingValueAttribute("True")>  _
+    Public Property InsightAllowed() As Boolean
+        Get
+            Return CType(Me("InsightAllowed"),Boolean)
+        End Get
+        Set
+            Me("InsightAllowed") = value
+        End Set
+    End Property
 End Class
 
 Namespace My
