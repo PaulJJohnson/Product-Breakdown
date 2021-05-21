@@ -1,4 +1,6 @@
 ﻿Imports System.IO
+Imports RequiredProductionClasses
+Imports RequiredProductionClasses.Utilities
 
 Class Application
 
@@ -27,14 +29,11 @@ Class Application
     Public Shared ListOfPOs As New List(Of String)
     Public Shared DictOfPOs As New Dictionary(Of String, List(Of String))
 
-    'Holds all part numbers for the products that are allowed for use in this program.
-    Public Shared AllowedProductRegistry As New List(Of String)
-
     Public Shared Event CurrentPOBaseChanged(sender As ProductOrder, e As EventArgs)
     Public Shared Event CurrentPOContentChanged(sender As Object, e As EventArgs)
 
     Private Sub Application_OnStartUp() Handles Me.Startup
-        Product.GenerateProductList()
+        Product.GenerateProductList(ProductDirectory)
 
         Schema.Add("15H", "C9")
         Schema.Add("22.5H", "C11")
@@ -77,10 +76,6 @@ Class Application
         'Reverse the list so the newest POs are on the top.
         ListOfPOFiles.Reverse()
 
-
-
-        'ListOfPOFiles = ListOfPOs.OrderBy(Function(x) x.Split("-")(1)).ToList()
-
         Dim index As Integer = 0
         While DictOfPOs.Keys.Count < 10 AndAlso index < ListOfPOFiles.Count
 
@@ -104,7 +99,7 @@ Class Application
                 contentVar = File.ReadAllText($"{My.Settings.iSupplier_CopiedLocation}{ListOfPOFiles(index).Split("\").Last()}").Split(vbNewLine).ToList()
             End Try
 
-            If My.Settings.AllowedProductRegistry.Contains(contentVar(1).Split(",")(4)) Then
+            If GetAllowedProducts.Contains(contentVar(1).Split(",")(4)) Then
                 'Get the Schedule Number.
                 Dim scheduleNumber As String = contentVar(1).Split(",")(1).Split("-")(2)
 
@@ -124,46 +119,5 @@ Class Application
             index += 1
         End While
     End Sub
-
-    Public Shared Function isQualified(PONumber As String) As Boolean
-        'Verify the PO is for qualified products.
-        'Qualified Products are products that are programed in.
-
-        Dim tempPO As New ProductOrder(PONumber)
-
-        'Verify part numbers are apart of the allowed registry.
-        If My.Settings.AllowedProductRegistry.Contains(tempPO.Products.Keys(0)) Then
-            tempPO = Nothing
-            Return True
-        End If
-
-        Return False
-    End Function
-
-    'Utilities
-    Public Shared Function isNumeric(inputString As String) As Boolean
-        Dim characterDictionary As New List(Of String) From {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-        For Each character In inputString
-            If characterDictionary.Contains(character) Then
-                'If the string contains even a single number we consider it numeric.
-                Return True
-            End If
-        Next
-
-        'Only gets here if the string contains no numbers.
-        Return False
-    End Function
-
-    Public Shared Function isOnlyNumeric(inputString As String) As Boolean
-        Try
-            Dim testVar As Double = CDbl(inputString)
-
-            'inputString is convertable to a double therefore it is only numeric.
-            Return True
-        Catch ex As Exception
-            'inputString failed the converstion and is therefore not just numeric.
-            Return False
-        End Try
-    End Function
 
 End Class

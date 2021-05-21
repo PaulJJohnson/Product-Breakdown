@@ -3,35 +3,18 @@ Imports Microsoft.Office.Interop
 Imports Microsoft.Win32
 Imports Product_Breakdown.Application
 Imports Product_Breakdown.MainWindow
-Imports Product_Breakdown.ProductOrder
 Imports System.Windows.Xps
 Imports System.Windows.Controls.Primitives
+Imports RequiredProductionClasses
+Imports RequiredProductionClasses.Utilities
+Imports System.Windows.Threading
 
 Class MainWindow
 
-    'Public Class BucketDataTemplateSelector
-    '    Inherits DataTemplateSelector
-    '    Public Overrides Function SelectTemplate(ByVal item As Object, ByVal container As DependencyObject) As DataTemplate
-
-    '        Dim element As FrameworkElement
-    '        element = TryCast(container, FrameworkElement)
-
-    '        If element IsNot Nothing AndAlso item IsNot Nothing AndAlso TypeOf item Is Task Then
-
-    '            Dim taskitem As Task = TryCast(item, Task)
-
-    '            If taskitem.Priority = 1 Then
-    '                Return TryCast(element.FindResource("importantTaskTemplate"), DataTemplate)
-    '            Else
-    '                Return TryCast(element.FindResource("myTaskTemplate"), DataTemplate)
-    '            End If
-    '        End If
-
-    '        Return Nothing
-    '    End Function
-    'End Class
-
     Dim infoPopup As Popup
+
+    Private DispatchTimerStarted As Boolean = False
+    Private WithEvents newDispatch As New Timers.Timer(5000)
 
     Public Property ComponentBreakdownDocument As FixedDocumentSequence = Nothing
 
@@ -39,10 +22,10 @@ Class MainWindow
     Public HiddenPOItems As New List(Of ListViewItem)
     Public DisplayedDates As New List(Of String)
 
-    Private Sub OnLoaded() Handles Me.Loaded
-        'Add handler to needed controls:
-        'AddHandler sldr_NumberOfDays.ValueChanged, AddressOf sldr_NumberOfDays_ValueChanged
+    'CurrentPO File Watcher:
+    Public Shared CurrentPOWatcher As FileSystemWatcher
 
+    Private Sub OnLoaded() Handles Me.Loaded
 
         'Set control values to the setting values:
         cb_NumberOfDays.SelectedIndex = My.Settings.int_DaysToDisplay - 2
@@ -330,7 +313,7 @@ Class MainWindow
 
     Public Sub watcher_ChangedFile(sender As Object, e As EventArgs)
         'Need to ensure that the current PO is up-to-date given the PO file changed is the same PO as the current PO.
-
+        MessageBox.Show("ChangedFile works")
     End Sub
 
 
@@ -376,11 +359,6 @@ Class MainWindow
                     'List will always contain the same number of POs as the dictionary they were pulled from.
                     HiddenPOItems.Add(tempItem)
 
-                    'If the day is within the allowed days then add it to the dispaly list.
-                    'If DictOfPOs.Keys.ToList.IndexOf(DayVar.Key) + 1 <= My.Settings.int_DaysToDisplay Then
-                    '    DisplayedPOItems.Add(tempItem)
-                    'End If
-
                 Catch ex As Exception
                     'Does nothing and continues to the next product order.
                 End Try
@@ -400,10 +378,6 @@ Class MainWindow
     End Sub
 
     Public Function DateFilter(item As Object) As Boolean
-        'Date that is checked against to determine whether the item is displayed or not.
-        'Dim cutoffDate As Date = Date.Today.Subtract(New TimeSpan(My.Settings.int_DaysToDisplay, 0, 0, 0))
-        'Dim checkDate As Date = CDate(item.tag.ToString.Replace("-", "/"))
-
         If DisplayedDates.Count <= My.Settings.int_DaysToDisplay Then
             If Not DisplayedDates.Contains(item.tag) AndAlso DisplayedDates.Count + 1 <= My.Settings.int_DaysToDisplay Then
                 DisplayedDates.Add(item.tag)
@@ -457,11 +431,49 @@ Class MainWindow
             UpdatePOInformation()
             FillBucketsTab(CurrentPO)
             ShowComponentBreakdown(CurrentPO)
+
+            'Start the filewatcher.
+            CurrentPOWatcher = New FileSystemWatcher(My.Settings.POSaveDirectory) With {
+                .EnableRaisingEvents = True,
+                .NotifyFilter = NotifyFilters.LastWrite,
+                .Filter = "*.JSON"
+            }
+
+            'Add the watcher to the handler.
+            AddHandler CurrentPOWatcher.Changed, New FileSystemEventHandler(AddressOf CurrentPO_FileChanged)
         End If
     End Sub
 
-    Private Sub CurrentPO_Changed()
+    Public Sub CurrentPO_FileChanged(sender As Object, e As FileSystemEventArgs)
+        If e.FullPath.Split("\").Last().Replace(".JSON", "") = CurrentPO.PONumber Then
+            'Check if the dates are before or after.
+            If isBefore(CurrentPO.LastAccess, File.GetLastWriteTime(e.FullPath)) = "Before" AndAlso DispatchTimerStarted = False Then
 
+                DispatchTimerStarted = True
+
+                newDispatch.AutoReset = False
+                'Start timer.
+                newDispatch.Start()
+
+            End If
+
+        End If
+    End Sub
+
+    Private Sub CurrentPO_DispatchTick(sender As Timers.Timer, e As EventArgs) Handles newDispatch.Elapsed
+
+        'Load the updated PO back in.
+        CurrentPO.Load(CurrentPO.PONumber)
+
+        'Refresh the views:
+        Dim view As CollectionView = CollectionViewSource.GetDefaultView(listView_Buckets.ItemsSource)
+        view.Refresh()
+
+        DispatchTimerStarted = False
+    End Sub
+
+    Private Sub CurrentPO_Changed()
+        'MessageBox.Show("hi I changed")
     End Sub
 
     Private Sub btn_PrintBreakdown_Click(sender As Object, e As EventArgs) Handles btn_PrintBreakdown.Click
@@ -517,7 +529,7 @@ Class MainWindow
             Dim outputList_Width As New Dictionary(Of String, Dictionary(Of String, Integer))
 
             For Each BucketNum In PO.RogueBuckets
-                Dim tempBucket As Bucket = PO.Buckets(BucketNum)
+                Dim tempBucket As ProductOrder.Bucket = PO.Buckets(BucketNum)
 
                 For Each productVar In tempBucket.Products
                     'Distinguish width.
@@ -740,5 +752,17 @@ Class MainWindow
         End If
 
         My.Settings.Save()
+    End Sub
+
+    'Timer tick event.
+    Private Event TimerTick(sender As Object, e As EventArgs)
+    'Timer event handler.
+    Private Sub Timer_Tick(sender As Object, e As EventArgs)
+        'Update the current PO.
+        Dim lastFileWrite As Date = File.GetLastWriteTime($"{My.Settings.POSaveDirectory}{sender.tag}.JSON")
+
+        If CurrentPO.LastAccess.Subtract(lastFileWrite).TotalSeconds > 2 Then
+            MessageBox.Show(CurrentPO.LastAccess.Subtract(lastFileWrite).TotalSeconds)
+        End If
     End Sub
 End Class
