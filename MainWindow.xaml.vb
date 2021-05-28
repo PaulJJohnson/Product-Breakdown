@@ -53,7 +53,7 @@ Class MainWindow
             AddHandler watcher.Deleted, AddressOf watcher_NewChangedFile
             AddHandler watcher.Renamed, AddressOf watcher_ChangedFile
 
-            AddHandler Application.CurrentPOBaseChanged, AddressOf CurrentPO_BaseChanged
+            AddHandler CurrentPOBaseChanged, AddressOf CurrentPO_BaseChanged
         End Using
     End Sub
 

@@ -18,6 +18,11 @@ Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Supervisor", "..\Supervisor
 	EndProjectSection
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Foreman", "..\Foreman\Foreman.vbproj", "{C7135207-1DA3-4778-AC10-E63158A259D3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7EA1F21A-1350-4131-BF16-E8C9EA8C1328} = {7EA1F21A-1350-4131-BF16-E8C9EA8C1328}
+	EndProjectSection
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Automated Data Solutions", "..\Automated Data Solutions\Automated Data Solutions.vbproj", "{E56243FE-ACA4-4D02-A666-2B5A39D81167}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,6 +50,10 @@ Global
 		{C7135207-1DA3-4778-AC10-E63158A259D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7135207-1DA3-4778-AC10-E63158A259D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7135207-1DA3-4778-AC10-E63158A259D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E56243FE-ACA4-4D02-A666-2B5A39D81167}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E56243FE-ACA4-4D02-A666-2B5A39D81167}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E56243FE-ACA4-4D02-A666-2B5A39D81167}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E56243FE-ACA4-4D02-A666-2B5A39D81167}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
