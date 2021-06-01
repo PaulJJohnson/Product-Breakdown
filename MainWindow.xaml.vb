@@ -137,7 +137,8 @@ Class MainWindow
             Dim tempPath As String = rootPath + fileName
 
             'Check if the files already exist. Do not recreate them if it's the case.
-            If Not My.Computer.FileSystem.DirectoryExists(rootPath) AndAlso Not My.Computer.FileSystem.FileExists(tempPath.Replace(".xlsx", ".xps")) Then
+            'If Not My.Computer.FileSystem.DirectoryExists(rootPath) AndAlso Not My.Computer.FileSystem.FileExists(tempPath.Replace(".xlsx", ".xps")) Then
+            If Not My.Computer.FileSystem.DirectoryExists(rootPath) Then
 
                 'Delete any template copies beforehand.
                 If File.Exists($"{My.Settings.TemplateDirectory}{ProductFamily} {ProductSubFamily}_{My.Computer.Name}.xlsx") Then
@@ -189,7 +190,7 @@ Class MainWindow
         Catch ex As Exception
             'Need to close the file.
 
-            MessageBox.Show(ex.Message, "",
+            MessageBox.Show($"Message: {ex.Message}{vbNewLine}PO Number: {PO.PONumber}", "",
         MessageBoxButton.OK, MessageBoxImage.Information)
             Return Nothing
         End Try
@@ -204,25 +205,6 @@ Class MainWindow
         Finally
             GC.Collect()
         End Try
-    End Sub
-
-    Private Sub btn_FindPO_Click(sender As Object, e As RoutedEventArgs) Handles btn_FindPO.Click
-        Dim openPicker As New OpenFileDialog With {.CheckFileExists = True, .InitialDirectory = My.Settings.iSupplier_Default, .Multiselect = False, .Title = "Point File Location", .Filter = "Text files (*.txt)|*.txt"}
-        openPicker.ShowDialog()
-
-        Dim PONumber As String = ""
-        If openPicker.FileName <> "" AndAlso openPicker.FileName IsNot Nothing Then
-            'Need to get the new location for the POs in order to copy the file.
-            PONumber = openPicker.FileName.Split("\")(openPicker.FileName.Split("\").Count - 1).Replace(".txt", "")
-
-            CurrentPO = New ProductOrder(PONumber)
-
-            Dim breakdown As Dictionary(Of String, Integer) = CreateComponentBreakdown()
-
-            PrintComponentBreakDown(GetFamilyInfo()(0), GetFamilyInfo()(1), breakdown)
-        End If
-
-        'If the a file is not chosen then the program doesn't continue executing.
     End Sub
 
     Private Function CreateComponentBreakdown(Optional PO As ProductOrder = Nothing) As Dictionary(Of String, Integer)
